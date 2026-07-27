@@ -9,9 +9,9 @@
 | Color schemes | `source/MacTahoe-kde/color-schemes` | `~/.local/share/color-schemes/` |
 | Plasma desktoptheme/look-and-feel | `source/MacTahoe-kde/plasma` | `~/.local/share/plasma/` |
 | SDDM (экран входа) | `source/MacTahoe-kde/sddm` | системный, ставится отдельным `sddm/install.sh` (нужен root) |
-| GTK-тема | `source/MacTahoe-gtk-theme/src` | `~/.themes/MacTahoe*` |
+| GTK-тема | `source/MacTahoe-gtk-theme/src` | `~/.themes/MacTahoe-Light`, `~/.themes/MacTahoe-Dark` и варианты `*-solid`/масштабирования |
 | Иконки | `source/MacTahoe-icon-theme/src` | `~/.local/share/icons/MacTahoe*` |
-| Курсоры | `source/MacTahoe-icon-theme/cursors` | `~/.local/share/icons/MacTahoe-cursors` (собираются отдельным `cursors/build.sh` + `cursors/install.sh`) |
+| Курсоры | `source/MacTahoe-icon-theme/cursors` | `~/.local/share/icons/MacTahoe-cursors`, `~/.local/share/icons/MacTahoe-dark-cursors` (собираются отдельным `cursors/build.sh` + `cursors/install.sh`) |
 
 ## Отличия от WhiteSur (`../MacOS/`), важные для переноса привычек
 
@@ -54,8 +54,10 @@ KWin/KF6» (см. `../MacOS/docs/KWIN_FORCEBLUR.md`) для этого прое�
 Alacritty-blur как в WhiteSur-проекте, придётся переносить тот же
 `kwin-forceblur-6.7` эффект отдельно — он не завязан на конкретную тему.
 
-## TODO после первой установки
+## Текущее применение
 
-- [ ] Снять снимок в `installed/` по факту установки.
-- [ ] Зафиксировать выбранные опции (цвет, акцент, alt-кнопки) в
-  `notes/CURRENT_STATE.md`.
+Фактические значения и проверенные пути зафиксированы в
+`notes/CURRENT_STATE.md`. Скрипт `tools/check-theme-state.sh` проверяет KDE,
+Kvantum, Aurorae и GTK; путь GTK `~/.themes/MacTahoe` в его старой проверке
+может отсутствовать, потому что установленный апстрим создаёт варианты
+`MacTahoe-Light` и `MacTahoe-Dark`.
