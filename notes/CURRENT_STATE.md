@@ -251,3 +251,93 @@ System Settings (Kirigami/QtQuick-приложение, отдельно от Do
 следующего перелогина рамка каких-то окон вдруг снова резкая — пересобрать
 и переустановить заново, не полагаться на то, что D-Bus reload одного
 раза достаточно навсегда.
+
+## System Settings: содержимое окна оставалось полностью непрозрачным — 2026-07-28
+
+Пользователь прислал скриншот с пометкой «сделай фон как в Dolphin» — стрелки
+указывали на заголовок, сайдбар и общую область окна «Быстрая настройка»
+(System Settings), не только на рамку. Раздел выше («Блюр рамки — распространён
+на ВСЕ окна») был ошибочно принят за полное решение: на самом деле он касается
+только Aurorae-рамки (KWin-декорация, отдельный буфер), которую forceblur
+размывает независимо от содержимого клиента. Строгая проверка по пикселям
+(`convert img.png -crop WxH+X+Y txt:-`, сравнение с эталонным `#FFFFFFFF`)
+показала: и в оригинальном скриншоте, и после моих первых попыток область
+СОДЕРЖИМОГО (сайдбар/список категорий/страница KCM) оставалась чистым
+`#FFFFFFFF` — 0% прозрачности, несмотря на то что видимая «дымка» в районе
+заголовка (декорация) создавала обманчивое впечатление, что всё окно
+затронуто.
+
+**Причина:** System Settings/kcmshell6 создают нативную поверхность окна до
+того, как Kvantum успевает выставить `WA_TranslucentBackground` с alpha-каналом
+в surface format — Kvantum сам не может задним числом сделать окно
+прозрачным (see `~/whitesur-build/Kvantum/Kvantum/style/polishing.cpp:362-390`,
+комментарий про «old Spectacle»). Это ограничение самого приложения/Qt, не
+лечится правкой kvconfig ни для WhiteSur, ни здесь.
+
+**Рабочее решение — компоузер-уровня, а не Kvantum:** KWin Window Rules
+(«Особые параметры окон», `~/.config/kwinrulesrc`), опция **Opacity**, forced
+(`Force`) на 75% активное/неактивное — совпадает с формулой Dolphin
+`0.75×белый + 0.25×фон`. Это форсирует альфу всего окна на уровне компоновки
+независимо от того, что рисует само приложение, а поскольку `forceblur`
+уже настроен на `WindowClasses=*`, фон под получившейся альфой ещё и
+по-настоящему блюрится (проверено увеличенным (400%) кропом — фон под текстом
+гладкий/смазанный, без деталей гор, то есть это блюр, а не просто чёткая
+подложенная картинка).
+
+Правила (два — под сайдбар/главный шелл и под отдельные kcmshell-окна KCM):
+
+```ini
+[1]
+Description=Translucency: System Settings (main shell)
+wmclass=systemsettings
+wmclassmatch=1
+wmclasscomplete=false
+types=1
+opacityactive=75
+opacityactiverule=2
+opacityinactive=75
+opacityinactiverule=2
+
+[2]
+Description=Translucency: standalone KCM windows (kcmshell)
+wmclass=kcm_
+wmclassmatch=2
+wmclasscomplete=false
+types=1
+opacityactive=75
+opacityactiverule=2
+opacityinactive=75
+opacityinactiverule=2
+
+[General]
+count=2
+rules=1,2
+```
+
+**Важная ловушка (полдня отладки):** `[General]` в `kwinrulesrc` имеет ДВА
+поля — легаси `count=N` и актуальный список `rules=id1,id2,...`. Если
+записать только `rules=1,2` без `count=2` — `RuleBookSettings::usrRead()`
+при следующем `qdbus6 org.kde.KWin /KWin reconfigure` читает `count=0` по
+умолчанию, считает книгу правил пустой и **при сохранении затирает и
+`rules=`, и все ключи с `wmclass`/`types` в группах** — визуально кажется,
+что konfig «сам стёрся». Признак: после `reconfigure` в файле остаются
+только те ключи, которые правились kwriteconfig6 последними (например
+`opacityactiverule`), а `wmclass`/`Description`/`types` пропадают, и
+`[General] rules=` становится пустым. Диагностировано разбором заголовков
+`/usr/include/kwin/rules.h` и `rulebooksettingsbase.kcfg`
+(`invent.kde.org/plasma/kwin`) — `RuleBookSettingsBase` хранит `count`
+(legacy) параллельно с `rules` (StringList); GUI «Особые параметры окон»
+(`kcmshell6 kwinrules`) — надёжный способ проверить, действительно ли
+правило подхвачено (показывает список активных правил или «не заданы»),
+не полагаться только на то, что файл на диске выглядит правильно.
+
+Также уточнены числовые enum'ы `Rules::SetRule`/`ForceRule` (из того же
+`rules.h`): `Unused=0, DontAffect=1, Force=2, Apply=3, Remember=4,
+ApplyNow=5, ForceTemporarily=6` — для реальной принудительной прозрачности
+нужно **2** (`Force`), не 3 (это было ошибочно принято за «force» в первой
+попытке и не давало эффекта).
+
+Проверено вживую на `systemsettings` (главный шелл) и на отдельном
+`kcmshell6 kcm_mouse` — оба теперь показывают то же смешение с фоном, что и
+Dolphin, без пересборки и без перелогина (обычный `reconfigure` через D-Bus
+подхватывает kwinrulesrc сразу, в отличие от forceblur.so).
