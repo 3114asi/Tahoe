@@ -674,17 +674,6 @@ void BlurEffect::blur(const RenderTarget &renderTarget, const RenderViewport &vi
 
     // Compute the effective blur shape. Note that if the window is transformed, so will be the blur shape.
     RegionF blurShape = blurRegion(w);
-    {
-        static int dbgCount = 0;
-        if (dbgCount < 5 && w->windowClass().contains("dolphin", Qt::CaseInsensitive)) {
-            dbgCount++;
-            qCWarning(KWIN_BLUR) << "blur(): windowClass=" << w->windowClass()
-                                  << "blurShape.boundingRect=" << blurShape.boundingRect()
-                                  << "content=" << it->second.content.has_value()
-                                  << "frame=" << it->second.frame.has_value()
-                                  << (it->second.frame.has_value() ? it->second.frame->boundingRect() : Rect());
-        }
-    }
     if (data.xScale() != 1 || data.yScale() != 1) {
         blurShape.scale(data.xScale(), data.yScale());
     }

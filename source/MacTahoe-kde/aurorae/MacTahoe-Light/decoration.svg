@@ -449,7 +449,7 @@
     <path
        id="path1019"
        style="opacity:0.35;fill:url(#radialGradient1306);fill-opacity:1;stroke:none"
-       d="M 40 65 L 40 116 L 81 116 L 81 110 C 81 96.704 91.704 86 105 86 L 110 86 L 110 65 L 40 65 z "
+       d="M 40 89 L 40 116 L 81 116 L 81 110 C 81 96.704 91.704 86 105 86 L 110 86 L 110 65 L 64 65 Q 40 65 40 89 z "
        transform="matrix(-1,0,0,1,535,115.0625)" />
     <path
        id="path1023"
@@ -536,7 +536,7 @@
     <path
        id="rect6520-3-2-6"
        style="opacity:0.5;fill:url(#radialGradient969);fill-opacity:1;stroke:none"
-       d="m 400,59 v 51 h 41 V 109.93555 104 c 0,-13.296 10.704,-24 24,-24 h 5 V 59 Z" />
+       d="m 400,83 v 27 h 41 V 109.93555 104 c 0,-13.296 10.704,-24 24,-24 h 5 V 59 L 424,59 Q 400,59 400,83 Z" />
     <path
        id="rect5073-4-9-6"
        style="opacity:0.75;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:1"
