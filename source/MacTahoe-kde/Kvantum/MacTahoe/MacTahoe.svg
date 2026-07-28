@@ -3350,27 +3350,27 @@
   <path
      id="toolbar-normal"
      d="M 494.9997,248.00005 V 272 h 32.00029 v -24 z"
-     style="fill:#ffffff" />
+     style="opacity:0;fill:#ffffff;fill-opacity:1" />
   <path
      id="toolbar-normal-left"
      d="m 463,248 v 2.22227 0 V 272 h 32 V 250.22227 L 494.99984,249 l -1.4e-4,-1 z"
-     style="fill:#ffffff" />
+     style="opacity:0;fill:#ffffff;fill-opacity:1" />
   <path
      id="toolbar-normal-right"
      d="M 526.99984,248 527,250.22227 v 0 V 272 h 32 V 250.22227 L 558.99984,249 v -1 z"
-     style="fill:#ffffff" />
+     style="opacity:0;fill:#ffffff;fill-opacity:1" />
   <path
      id="toolbar-normal-inactive"
      d="M 494.99984,305.00005 V 329 h 32.00029 v -24 c 0,0 -27.22181,4e-5 -32.00029,5e-5 z"
-     style="fill:#f2f2f2" />
+     style="opacity:0;fill:#ffffff;fill-opacity:1" />
   <path
      id="toolbar-normal-inactive-left"
      d="m 463.00014,305 v 2.22227 0 V 329 h 31.99999 v -21.77773 l 10e-6,-1.22227 -3e-4,-0.99995 z"
-     style="fill:#f2f2f2" />
+     style="opacity:0;fill:#ffffff;fill-opacity:1" />
   <path
      id="toolbar-normal-inactive-right"
      d="m 527.00014,305 v 2.22227 0 V 329 h 32 V 307.22227 306 305 Z"
-     style="fill:#f2f2f2" />
+     style="opacity:0;fill:#ffffff;fill-opacity:1" />
   <g
      style="opacity:0;fill:#000000;fill-rule:evenodd;stroke:none"
      id="tbutton-separator-bottom"

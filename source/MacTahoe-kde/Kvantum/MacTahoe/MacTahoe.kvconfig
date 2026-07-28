@@ -61,7 +61,7 @@ spin_button_width=24
 submenu_delay=250
 transient_groove=false
 tree_branch_line=true
-no_inactiveness=false
+no_inactiveness=true
 reduce_menu_opacity=15
 click_behavior=0
 contrast=1.00
@@ -75,12 +75,12 @@ menu_blur_radius=6
 tooltip_blur_radius=6
 
 [GeneralColors]
-window.color=#ffffff
-inactive.window.color=#ffffff74
-base.color=#ffffff
-inactive.base.color=#fffff74
-alt.base.color=#fafafa
-inactive.alt.base.color=#fafafa74
+window.color=#ffffffbf
+inactive.window.color=#ffffffbf
+base.color=#ffffffbf
+inactive.base.color=#ffffffbf
+alt.base.color=#fafafabf
+inactive.alt.base.color=#fafafabf
 button.color=#ffffff
 light.color=#ffffff
 mid.light.color=#eeeeee
@@ -104,7 +104,7 @@ progress.indicator.text.color=#ffffff
 
 [Hacks]
 transparent_ktitle_label=true
-transparent_dolphin_view=false
+transparent_dolphin_view=true
 transparent_pcmanfm_sidepane=true
 blur_translucent=true
 transparent_menutitle=true

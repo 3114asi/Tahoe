@@ -352,10 +352,10 @@
     <path
        id="path1"
        d="M 470,275.92202 H 325 v 1 h 145 z"
-       style="opacity:0.75;fill:#f2f2f2;fill-opacity:1" />
+       style="opacity:0.75;fill:#ffffff;fill-opacity:1" />
   </g>
   <path
-     style="opacity:0.75;fill:#f2f2f2;fill-opacity:1;stroke:none"
+     style="opacity:0.75;fill:#ffffff;fill-opacity:1;stroke:none"
      d="m 470,110 v 84.99998 H 615 V 110 Z"
      id="decoration-inactive-center"
      sodipodi:nodetypes="ccccc" />
@@ -375,7 +375,7 @@
        style="opacity:0.08;fill:#000000;fill-opacity:1;stroke:none"
        id="path6098-4-8" />
     <path
-       style="opacity:0.75;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:1"
+       style="opacity:0.75;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1"
        d="m 325,176 v 30 h 145 v -30 z"
        id="path6092-3-3" />
     <path
@@ -503,7 +503,7 @@
     <path
        id="path17"
        d="m 441.26562,195 c 0.34361,0.59655 0.98666,0.99717 1.72657,1 H 470 v -1 z"
-       style="opacity:0.75;fill:#f2f2f2;fill-opacity:1" />
+       style="opacity:0.75;fill:#ffffff;fill-opacity:1" />
     <path
        id="path18"
        d="m 440.16992,195 c 0.4101,1.16742 1.51905,2 2.83008,2 h 27 v -1 h -27 c -0.74321,0 -1.38955,-0.40135 -1.73438,-1 H 441 Z"
@@ -517,7 +517,7 @@
        id="path6345-1-1"
        sodipodi:nodetypes="ccccc" />
     <path
-       style="opacity:0.75;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:0.994169"
+       style="opacity:0.75;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.994169"
        d="m 441,110 v 84.99998 h 29 V 110 Z"
        id="path6339-9-9" />
     <path
@@ -539,7 +539,7 @@
        d="m 400,83 v 27 h 41 V 109.93555 104 c 0,-13.296 10.704,-24 24,-24 h 5 V 59 L 424,59 Q 400,59 400,83 Z" />
     <path
        id="rect5073-4-9-6"
-       style="opacity:0.75;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:1"
+       style="opacity:0.75;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1"
        d="m 465,80 c -13.296,0 -24,10.704 -24,24 v 5.93555 0.0644 h 29 v -30 z" />
     <path
        id="path30"
