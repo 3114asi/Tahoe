@@ -173,6 +173,17 @@ Big Sur/Monterey). Оба проекта независимы, живут в с�
      минимизированным окном), факт сравнивается с формулой
      `0.75×белый + 0.25×фон`, а не визуально на глаз.
 
+5. **Блюр рамки распространён на все окна, не только Dolphin/Alacritty,
+   2026-07-28** — `shouldForceBlur()` в `blur.cpp` понимает `*` в
+   `WindowClasses` как «форсировать для любого окна». `kwinrc`:
+   `WindowClasses=dolphin,alacritty` → `*`. Дефолт в
+   `tools/install-kwin-forceblur.sh` тоже стал `*` (переопределить —
+   `FORCEBLUR_CLASSES=dolphin,alacritty tools/install-kwin-forceblur.sh`).
+   Проверено на System Settings (Kirigami-приложение, не Kvantum/Dolphin) —
+   численно совпадает с той же формулой блюра. Подробности —
+   `notes/CURRENT_STATE.md`, раздел «Блюр рамки — распространён на ВСЕ
+   окна».
+
 **Инцидент, ранее предполагавшийся в разделе выше, подтверждён:** MacTahoe-kde
 не имеет собственного C++/QML blur-эффекта, но система (общая для этого и
 `../MacOS/` проекта) уже использует кастомный `forceblur.so` вместо штатного

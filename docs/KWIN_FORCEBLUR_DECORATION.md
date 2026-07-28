@@ -77,9 +77,26 @@ if (!frame.has_value() && forceBlurWindow) {
 ```
 
 `shouldForceBlur(w)` — уже существующая в апстримном форс-блюре проверка
-класса окна (`[Effect-blur] WindowClasses`, без учёта регистра, по вхождению).
-Настоящая правка — только эти ~10 строк; остальной файл идентичен исходнику
-из `../MacOS/`.
+класса окна (`[Effect-blur] WindowClasses`, без учёта регистра, по вхождению),
+расширенная в этом проекте (2026-07-28) поддержкой значения `*` — если хотя
+бы один элемент списка (после `trim()`) равен `*`, форс-блюр включается для
+ЛЮБОГО окна (кроме десктопа/доков, отфильтрованных в начале функции), минуя
+сравнение класса вообще:
+
+```cpp
+for (const QString &cls : m_windowClasses) {
+    const QString needle = cls.trimmed();
+    if (needle == QLatin1String("*")) {
+        return true; // force blur for every window
+    }
+    if (!needle.isEmpty() && windowClass.contains(needle, Qt::CaseInsensitive)) {
+        return true;
+    }
+}
+```
+
+Настоящая правка — эти ~10 строк плюс wildcard-проверка; остальной файл
+идентичен исходнику из `../MacOS/`.
 
 ## Конфигурация
 
@@ -91,12 +108,17 @@ forceblurEnabled=true
 [Effect-blur]
 BlurStrength=15
 NoiseStrength=0
-WindowClasses=dolphin
+WindowClasses=*
 ```
 
-Если на этой же системе также нужен форс-блюр для Alacritty (как в
-`../MacOS/`), значения класса перечисляются через запятую:
-`WindowClasses=dolphin,alacritty`.
+`WindowClasses=*` (значение по умолчанию `tools/install-kwin-forceblur.sh`
+с 2026-07-28) форсирует блюр рамки/контента для ВСЕХ окон в системе, не
+только Dolphin/Alacritty — так рамка любого окна (System Settings, Kate,
+Firefox и т.д.) получает тот же полупрозрачный вид, что и у Dolphin. Чтобы
+вернуть точечный список конкретных приложений вместо `*`, задать
+`FORCEBLUR_CLASSES` явно при запуске скрипта, например
+`FORCEBLUR_CLASSES=dolphin,alacritty tools/install-kwin-forceblur.sh` —
+значения класса перечисляются через запятую.
 
 ## Как собрать/установить
 

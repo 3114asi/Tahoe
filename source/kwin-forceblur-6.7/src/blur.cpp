@@ -476,6 +476,10 @@ bool BlurEffect::shouldForceBlur(const EffectWindow *w) const
     const QString windowClass = w->windowClass();
     for (const QString &cls : m_windowClasses) {
         const QString needle = cls.trimmed();
+        if (needle == QLatin1String("*")) {
+            // Wildcard: force blur for every window (still excluding desktop/dock above).
+            return true;
+        }
         if (!needle.isEmpty() && windowClass.contains(needle, Qt::CaseInsensitive)) {
             return true;
         }
