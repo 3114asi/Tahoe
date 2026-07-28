@@ -357,6 +357,31 @@ void BlurEffect::updateBlurRegion(EffectWindow *w)
     }
 }
 
+void BlurEffect::updateDecorationOpacityCompensation(EffectWindow *w)
+{
+    WindowItem *windowItem = w->windowItem();
+    DecorationItem *decorationItem = windowItem ? windowItem->decorationItem() : nullptr;
+    if (!decorationItem) {
+        return;
+    }
+
+    // A forced static window opacity (e.g. our System Settings/KCM
+    // content-translucency Window Rule, see
+    // docs/KWIN_FORCEBLUR_DECORATION.md) is applied by the scene as one more
+    // multiplier down the Item tree, on top of the decoration's own alpha
+    // (WindowItem::updateOpacity() sets the window item's opacity to
+    // w->opacity(), which ItemRendererOpenGL's opacityStack then multiplies
+    // into every descendant, decorationItem included). That makes the frame
+    // fade further toward whatever is behind it than Dolphin's frame does
+    // (Dolphin needs no such rule), even though both use the identical
+    // Aurorae decoration. Cancel the multiplier out on the decoration branch
+    // specifically, so the frame always renders at full strength like
+    // Dolphin's, while the content branch is untouched and still gets the
+    // intended translucency from the rule.
+    const qreal windowOpacity = w->opacity();
+    decorationItem->setOpacity(windowOpacity > 0.0 ? 1.0 / windowOpacity : 1.0);
+}
+
 void BlurEffect::slotWindowAdded(EffectWindow *w)
 {
     SurfaceInterface *surf = w->surface();
@@ -376,9 +401,14 @@ void BlurEffect::slotWindowAdded(EffectWindow *w)
     connect(w, &EffectWindow::windowDecorationChanged, this, [this, w]() {
         setupDecorationConnections(w);
         updateBlurRegion(w);
+        updateDecorationOpacityCompensation(w);
+    });
+    connect(w, &EffectWindow::windowOpacityChanged, this, [this, w]() {
+        updateDecorationOpacityCompensation(w);
     });
 
     updateBlurRegion(w);
+    updateDecorationOpacityCompensation(w);
 }
 
 void BlurEffect::slotWindowDeleted(EffectWindow *w)
@@ -672,7 +702,9 @@ void BlurEffect::blur(const RenderTarget &renderTarget, const RenderViewport &vi
 
     BlurEffectData &blurInfo = it->second;
     BlurRenderData &renderInfo = blurInfo.render[m_currentView];
-    if (!shouldBlur(w, mask, data)) {
+    const bool doBlur = shouldBlur(w, mask, data);
+
+    if (!doBlur) {
         return;
     }
 
@@ -691,6 +723,16 @@ void BlurEffect::blur(const RenderTarget &renderTarget, const RenderViewport &vi
     const Rect scaledBackgroundRect = backgroundRect.scaled(viewport.scale()).rounded();
     const Rect deviceBackgroundRect = viewport.mapToDeviceCoordinates(backgroundRect).rounded();
     const auto opacity = w->opacity() * data.opacity();
+    // Underlay modulation must track only the transient per-paint (animation)
+    // opacity, not the window's static/rule opacity (w->opacity()): the scene
+    // renderer applies w->opacity() a second time, linearly, when it draws the
+    // real window content on top (WindowItem::opacity() feeds
+    // ItemRendererOpenGL's opacityStack, see scene/itemrenderer_opengl.cpp).
+    // Squaring the *combined* opacity here double-counts any static window
+    // opacity (e.g. from an opacityrule with no real per-pixel content alpha,
+    // like System Settings), leaving a fraction of the raw unblurred
+    // background to bleed through instead of the blurred backdrop.
+    const auto underlayModulationOpacity = data.opacity();
 
     // Get the effective shape that will be actually blurred. It's possible that all of it will be clipped.
     QList<RectF> effectiveShape;
@@ -911,7 +953,7 @@ void BlurEffect::blur(const RenderTarget &renderTarget, const RenderViewport &vi
         ShaderManager::instance()->popShader();
     }
 
-    const float modulation = opacity * opacity;
+    const float modulation = underlayModulationOpacity * underlayModulationOpacity;
 
     if (const BorderRadius cornerRadius = w->window()->borderRadius(); !cornerRadius.isNull()) {
         ShaderManager::instance()->pushShader(m_roundedOnscreenPass.shader.get());

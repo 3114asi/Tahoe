@@ -90,6 +90,7 @@ private:
     bool shouldForceBlur(const EffectWindow *w) const;
     bool shouldBlur(const EffectWindow *w, int mask, const WindowPaintData &data) const;
     void updateBlurRegion(EffectWindow *w);
+    void updateDecorationOpacityCompensation(EffectWindow *w);
     void blur(const RenderTarget &renderTarget, const RenderViewport &viewport, EffectWindow *w, int mask, const Region &deviceRegion, WindowPaintData &data);
     GLTexture *ensureNoiseTexture();
 
