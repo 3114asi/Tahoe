@@ -1,0 +1,15 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "KWin development team"
+            }
+        ],
+        "Category": "Appearance",
+        "Description": "KWin 6.7 Blur effect with force-blur by window class (for Alacritty)",
+        "EnabledByDefault": false,
+        "Id": "forceblur",
+        "License": "GPL",
+        "Name": "Force Blur (6.7)"
+    }
+}

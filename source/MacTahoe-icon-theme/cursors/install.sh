@@ -18,11 +18,10 @@ COLOR_VARIANTS=('' '-dark')
 SRC_DIR="$OPEN_DIR"/src
 INDEX="$SRC_DIR/cursorSVG"
 
-install_cursors() {
+init_theme_dir() {
   local dest=${1}
   local name=${2}
   local color=${3}
-  local svgid=${4}
 
   local THEME_DIR="${dest}/${name}${color}-cursors"
 
@@ -32,16 +31,31 @@ install_cursors() {
 #  cp -r "${SRC_DIR}/cursor.theme" "${THEME_DIR}"
 #  sed -i "s/${name}/${name}${color}/g" "${THEME_DIR}/cursor.theme"
   cp -rf "$SRC_DIR"/scalable "${THEME_DIR}"/cursors_scalable
+}
+
+install_cursor_svg() {
+  local dest=${1}
+  local name=${2}
+  local color=${3}
+  local svgid=${4}
+
+  local THEME_DIR="${dest}/${name}${color}-cursors"
+
   cp -rf "$SRC_DIR/svg${color}/${svgid}.svg" "${THEME_DIR}/cursors_scalable/${svgid}"
-  cp -rf "$SRC_DIR/svg${color}/progress"*".svg" "${THEME_DIR}/cursors_scalable/progress"
-  cp -rf "$SRC_DIR/svg${color}/wait"*".svg" "${THEME_DIR}/cursors_scalable/wait"
 }
 
 install_cursor_theme() {
   for color in "${COLOR_VARIANTS[@]}"; do
+    local THEME_DIR="${dest:-${DEST_DIR}}/${name:-${THEME_NAME}}${color}-cursors"
+
+    init_theme_dir "${dest:-${DEST_DIR}}" "${name:-${THEME_NAME}}" "${color}"
+
     for svgid in `cat $INDEX`; do
-      install_cursors "${dest:-${DEST_DIR}}" "${name:-${THEME_NAME}}" "${color}" "${svgid}"
+      install_cursor_svg "${dest:-${DEST_DIR}}" "${name:-${THEME_NAME}}" "${color}" "${svgid}"
     done
+
+    cp -rf "$SRC_DIR/svg${color}/progress"*".svg" "${THEME_DIR}/cursors_scalable/progress"
+    cp -rf "$SRC_DIR/svg${color}/wait"*".svg" "${THEME_DIR}/cursors_scalable/wait"
   done
 }
 
