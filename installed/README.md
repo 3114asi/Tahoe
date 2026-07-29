@@ -46,8 +46,10 @@ tools/apply-gtk-theme.sh
 tools/install-kwin-forceblur.sh
 
 # 5. Глобальная прозрачность+блюр в стиле Dolphin для ВСЕХ окон (KWin Window
-#    Rules) — Chrome/VLC/Gwenview/JetBrains IDE исключены по умолчанию, см.
-#    notes/CURRENT_STATE.md, раздел «Прозрачность+блюр Dolphin распространена
+#    Rules) — Chrome/VLC/Gwenview/JetBrains IDE/Dolphin/Alacritty/Spectacle
+#    исключены по умолчанию (Dolphin/Alacritty уже имеют свою нативную альфу,
+#    Spectacle не должен искажаться при съёмке скриншотов), см. AI_HANDOFF.md
+#    и notes/CURRENT_STATE.md, раздел «Прозрачность+блюр Dolphin распространена
 #    глобально»:
 tools/install-kwin-window-rules.sh
 

@@ -2,7 +2,7 @@
 # Force Dolphin-style translucency (0.75 opacity, blurred behind by forceblur)
 # onto every window via a KWin Window Rule, with explicit exceptions for apps
 # where see-through content hurts readability (browser, video, image viewer,
-# IDEs by default).
+# IDEs, screenshot tool by default).
 #
 # Background: Kvantum can only make a window translucent if the app itself
 # requests an alpha-channel surface before Kvantum gets to polish it (works
@@ -25,7 +25,13 @@ RULES_FILE="$HOME/.config/kwinrulesrc"
 # from the global translucency (kept fully opaque, as they are today).
 # Override to customize, e.g.:
 #   TRANSLUCENCY_EXCLUDE_CLASSES="chrome,vlc,firefox" tools/install-kwin-window-rules.sh
-TRANSLUCENCY_EXCLUDE_CLASSES="${TRANSLUCENCY_EXCLUDE_CLASSES:-chrome,vlc,gwenview,jetbrains}"
+#
+# NB: KWin's substring match (Rules::matchWMClass, rules.cpp) is
+# case-SENSITIVE (QString::contains, no CaseInsensitive flag). KDE apps
+# register a lowercase resourceClass ("dolphin"), but Alacritty's Wayland
+# app_id is "Alacritty" (capital A, its winit default) -- so it must be
+# spelled with the matching case here or this entry silently never matches.
+TRANSLUCENCY_EXCLUDE_CLASSES="${TRANSLUCENCY_EXCLUDE_CLASSES:-chrome,vlc,gwenview,jetbrains,dolphin,Alacritty,spectacle}"
 TRANSLUCENCY_OPACITY="${TRANSLUCENCY_OPACITY:-75}"
 
 require_command() {
