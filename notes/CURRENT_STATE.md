@@ -478,3 +478,76 @@ org.gnome.desktop.interface gtk-theme`) уже показывала MacTahoe, н
 `MacTahoe-cursors`) и не менялись. `gsettings gtk-theme`/`icon-theme` тоже
 уже были верными — рассинхрон был только в файлах, которые правит отдельный
 инструмент (`kde-gtk-config`/KCM), а не `plasma-apply-lookandfeel`.
+
+## Диалоги Dolphin: фон не совпадал с рамкой (цвет), исправлено — 2026-07-29
+
+Численно подтверждено (обои временно сделаны белыми для чистоты сравнения,
+`spectacle -a`/`-f` + `convert ... txt:-`): на «Настройка — Dolphin» рамка и
+сайдбар — `#FFFFFF` при α=0.75, область настроек — `#F6F6F6` при той же
+α=0.75. Причина найдена в исходнике Kvantum
+(`~/whitesur-build/Kvantum/Kvantum/style/Kvantum.cpp:1855-1927`): для любого
+верхнеуровневого окна Kvantum по умолчанию использует SVG-элемент `dialog`
+(`[Dialog] interior.element=dialog`), переключаясь на `window` только если
+первый child в точке (0,0) — `QMenuBar`/`QToolBar`. `dialog-normal`/
+`dialog-normal-inactive` в `MacTahoe.svg` остались с апстримными
+`#f6f6f6`/`#f5f5f5` (`fill-opacity:1`) — их не трогали при унификации
+прозрачности Dolphin (та работа шла через `[GeneralColors]`,
+`decoration.svg`, KWin-правила, не через этот SVG-элемент).
+
+**Правка:** только цвет, `#f6f6f6`→`#ffffff`, `#f5f5f5`→`#f2f2f2` (в тон
+`window-normal`/`window-normal-inactive`), альфа не добавлялась — она уже
+форсится KWin-правилом (см. следующий раздел), добавление альфы в SVG
+повторило бы баг двойного умножения. Синхронно в `~/.config/Kvantum/
+MacTahoe/MacTahoe.svg` и `source/MacTahoe-kde/Kvantum/MacTahoe/MacTahoe.svg`.
+Бэкап — `backups/dialog-background_20260729-180306/`. Требует полного
+перезапуска процесса приложения, не просто закрытия окна.
+
+**Проверка:** после правки — «Настройка — Dolphin»: рамка/сайдбар/контент
+все `#FFFFFF`/α0.75. Так как это правка общего файла темы, а не
+Dolphin-специфичного кода, фикс системный — проверен без дополнительных
+правок на диалоге настроек KCalc (другое приложение), тот же результат.
+
+## Диалоги Dolphin: контент оставался непрозрачным (не только «Настройка») — универсальный фикс через `hastransientparent`, 2026-07-29
+
+После фикса цвета выше проверено окно «Свойства» (Alt+Enter/ПКМ на файле) —
+фон полностью непрозрачный (α=1.0) при прозрачной рамке (α=0.75). Прежний
+punch-through в `tools/install-kwin-window-rules.sh` матчил только заголовок
+`^(Настройка|Configure) `, под «Свойства ...» не подходивший — окно
+продолжало ловиться исключением `wmclass=dolphin`.
+
+Через временный KWin-скрипт (`qdbus6 org.kde.KWin /Scripting loadScript` →
+`qdbus6 org.kde.KWin /Scripting/Script0 org.kde.kwin.Script.run` →
+`journalctl --user -b0 -o cat`, `workspace.windowList()`) подтверждено: окно
+«Свойства» отдаёт `normalWindow=true, dialog=false, transient=true`, без
+`windowRole` — отличить его от главного окна по NET::WindowType или роли
+нельзя, а по заголовку не масштабируется на другие диалоги (Переименовать,
+«Открыть с помощью» и т.д.) и локале-зависимо.
+
+**Найденное надёжное поле** — `hastransientparent`
+(`/usr/include/kwin/rulesettings.kcfg`, `rules.cpp:479-480`:
+`bool(transientParent) == hastransientparent`): истинно для любого
+дочернего окна, ложно только для настоящего главного окна.
+
+`tools/install-kwin-window-rules.sh` переписан: punch-through по заголовку
+убран целиком; исключение для `NATIVE_ALPHA_CLASSES` (`dolphin,Alacritty`)
+теперь скоуплено `hastransientparent=false`+`hastransientparentmatch=1`
+(`ExactBoolMatch=1`) вместо `types=1`. Итоговый `~/.config/kwinrulesrc`
+(фрагмент, класс `dolphin`):
+
+```ini
+[5]
+Description=Exclude from global translucency: dolphin
+wmclass=dolphin
+wmclassmatch=2
+wmclasscomplete=false
+types=289
+hastransientparent=false
+hastransientparentmatch=1
+opacityactiverule=1
+opacityinactiverule=1
+```
+
+**Проверка** (полный перезапуск `dolphin`, старые окна не откатывают уже
+применённый opacity): «Свойства» — `#FFFFFF`/α0.75; «Настройка» — без
+регрессии; главное окно Dolphin — без двойного умножения альфы (нативные
+0.75, не 0.5625).
