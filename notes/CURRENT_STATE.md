@@ -341,3 +341,140 @@ ApplyNow=5, ForceTemporarily=6` — для реальной принудител
 `kcmshell6 kcm_mouse` — оба теперь показывают то же смешение с фоном, что и
 Dolphin, без пересборки и без перелогина (обычный `reconfigure` через D-Bus
 подхватывает kwinrulesrc сразу, в отличие от forceblur.so).
+
+## Прозрачность+блюр Dolphin распространена глобально на ВСЕ окна, кроме исключений — 2026-07-29
+
+Пользователь попросил не настраивать каждое приложение отдельно, а включить
+вид как у Dolphin (`0.75×цвет + 0.25×фон`, блюр фона через `forceblur`)
+глобально для всех окон системы, с исключением конкретных категорий, где
+просвечивание мешает: браузер, видео/медиаплееры, редакторы кода/IDE,
+просмотр изображений. Механизм — тот же, что уже был найден для System
+Settings (раздел выше): KWin Window Rules работают на уровне компоузера,
+поверх содержимого окна любого тулкита (Qt/GTK/Electron), не только Qt/Kvantum.
+
+Старые два точечных правила (`systemsettings`, `kcm_`) заменены одним
+универсальным правилом с `wmclassmatch=0` (Unimportant — совпадает с любым
+классом окна) + четырьмя правилами-исключениями с `opacityactiverule`/
+`opacityinactiverule=1` (`DontAffect`), которые должны идти **раньше**
+универсального правила в списке `rules=` — по опыту работы KWin с
+несколькими совпавшими правилами для одного окна побеждает **первое**
+совпавшее правило для данного свойства (`Force`/`DontAffect` от более ранней
+записи блокирует переопределение более поздними записями для того же
+свойства). Итоговый `~/.config/kwinrulesrc` (синхронно не хранится в Git —
+личный конфиг, как и `alacritty.toml`):
+
+```ini
+[1]
+Description=Exclude from global translucency: Chrome
+wmclass=chrome
+wmclassmatch=2
+wmclasscomplete=false
+types=1
+opacityactiverule=1
+opacityinactiverule=1
+
+[2]
+Description=Exclude from global translucency: VLC
+wmclass=vlc
+wmclassmatch=2
+wmclasscomplete=false
+types=1
+opacityactiverule=1
+opacityinactiverule=1
+
+[3]
+Description=Exclude from global translucency: Gwenview (image viewer)
+wmclass=gwenview
+wmclassmatch=2
+wmclasscomplete=false
+types=1
+opacityactiverule=1
+opacityinactiverule=1
+
+[4]
+Description=Exclude from global translucency: JetBrains IDEs (Android Studio etc.)
+wmclass=jetbrains
+wmclassmatch=2
+wmclasscomplete=false
+types=1
+opacityactiverule=1
+opacityinactiverule=1
+
+[5]
+Description=Translucency: Dolphin-style glass for ALL other windows
+wmclass=
+wmclassmatch=0
+wmclasscomplete=false
+types=1
+opacityactive=75
+opacityactiverule=2
+opacityinactive=75
+opacityinactiverule=2
+
+[General]
+count=5
+rules=1,2,3,4,5
+```
+
+Реально установленные на системе приложения по категориям (проверено
+`ls /usr/share/applications` + `~/.local/share/applications`):
+браузер — `google-chrome-stable` (класс `chrome`, substring); видео —
+`vlc` (класс `vlc`); просмотр изображений — `gwenview` (класс `gwenview`);
+IDE — Android Studio, `StartupWMClass=jetbrains-studio` (класс-паттерн
+`jetbrains`, substring — заодно покроет любые другие JetBrains IDE, если
+появятся). Если пользователь позже поставит другой браузер/плеер/редактор —
+по этой же схеме добавить ещё одно правило-исключение с нужным `wmclass`
+**перед** правилом `[5]`, не забыть `count=`/`rules=` в `[General]`.
+
+**Проверено численно (не только на глаз)**, как и во всех прошлых пунктах
+этого раздела — `convert img.png -crop 1x1+X+Y txt:-` в нескольких точках,
+сравнение окна с открытым приложением против чистого снимка тех же
+координат без окон:
+
+- Chrome (`about:blank`) поверх фона `(214,231,234)` — пиксель `(255,255,255)`,
+  то есть 0% примеси фона — исключение действует, окно осталось полностью
+  непрозрачным.
+- Gwenview поверх System Settings (уже прозрачных) — визуально чистый белый
+  `#FFFFFF`, никакой дымки/фона сквозь окно — исключение действует.
+- KCalc (не в списке исключений) поверх двух разных фонов —
+  `(216,233,235)→242,242,242` и `(140,181,185)→238,238,238` — оба заметно
+  темнее чистого белого и зависят от фона позади окна (в отличие от
+  плоского `255,255,255` у Chrome), то есть глобальное правило `[5]`
+  реально форсирует альфу и блюр для приложения, для которого раньше не
+  было отдельного правила.
+
+Backup предыдущей версии файла — `~/.config/kwinrulesrc.bak-20260729-102321`.
+
+**Воспроизводимость (2026-07-29, тем же днём позже):** изначально это правило
+существовало только как вручную записанный live-файл, нигде не
+воспроизводилось скриптом (в отличие от Kvantum/Aurorae/панели, уже
+синхронизированных в `source/`). Теперь есть `tools/install-kwin-window-rules.sh`
+(генерирует ровно этот INI, список исключений переопределяется
+`TRANSLUCENCY_EXCLUDE_CLASSES`) и `tools/check-kwin-window-rules.sh`
+(проверка, включая ловушку `count=`/`rules=`). Прогнан вживую — файл
+пересоздан скриптом побитово идентичным ручной версии, `reconfigure`
+отработал без потери правил. Полная последовательность воспроизведения
+текущего визуального состояния с нуля — `installed/README.md`.
+
+## GTK-тема сессии переключена на MacTahoe — 2026-07-29
+
+До этой правки KDE-сторона (`kdeglobals`, `gsettings
+org.gnome.desktop.interface gtk-theme`) уже показывала MacTahoe, но файлы,
+которые GTK-приложения реально читают при старте, ещё показывали
+`WhiteSur-Light` (наследие соседнего `../MacOS/`) — реальная рассинхронизация,
+не просто устаревшая запись в этом файле. Исправлено новым
+`tools/apply-gtk-theme.sh` (см. `AI_HANDOFF.md`, раздел «GTK/GNOME-приложения
+переключены на MacTahoe»). Актуальные значения на всех уровнях:
+
+| Файл/ключ | Было | Стало |
+| --- | --- | --- |
+| `~/.config/gtk-3.0/settings.ini`, `gtk-theme-name` | `WhiteSur-Light` | `MacTahoe-Light` |
+| `~/.config/gtk-4.0/settings.ini`, `gtk-theme-name` | `WhiteSur-Light` | `MacTahoe-Light` |
+| `~/.config/xsettingsd/xsettingsd.conf`, `Net/ThemeName` | `"WhiteSur-Light"` | `"MacTahoe-Light"` |
+| `~/.gtkrc-2.0`, `gtk-theme-name` | `"WhiteSur-Light"` | `"MacTahoe-Light"` |
+| `gsettings org.gnome.desktop.wm.preferences theme` | `Adwaita` | `MacTahoe-Light` |
+
+Иконки/курсор в этих же файлах уже были верными (`MacTahoe-light`/
+`MacTahoe-cursors`) и не менялись. `gsettings gtk-theme`/`icon-theme` тоже
+уже были верными — рассинхрон был только в файлах, которые правит отдельный
+инструмент (`kde-gtk-config`/KCM), а не `plasma-apply-lookandfeel`.
