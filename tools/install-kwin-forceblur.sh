@@ -31,12 +31,11 @@ HOME_DIR="${HOME}"
 SRC_DIR="$ROOT/source/kwin-forceblur-6.7"
 BUILD_DIR="$ROOT/tmp/build-kwin-forceblur"
 
-# Window classes that should be force-blurred, content AND decoration
-# (comma-separated for KWin, or "*" to force-blur every window regardless of
-# class). Default is "*" so every window's frame gets the same translucent
-# look as Dolphin's; set FORCEBLUR_CLASSES to a specific comma-separated list
-# to scope it back down to particular apps instead.
-FORCEBLUR_CLASSES="${FORCEBLUR_CLASSES:-*}"
+# Window classes that should be force-blurred, content AND decoration.
+# Entries prefixed with "!" are exclusions and take precedence over positive
+# entries; "*,!mpv" therefore blurs everything except mpv. Set
+# FORCEBLUR_CLASSES to customize the comma-separated list.
+FORCEBLUR_CLASSES="${FORCEBLUR_CLASSES:-*,!mpv}"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then

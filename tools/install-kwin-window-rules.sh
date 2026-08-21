@@ -31,7 +31,7 @@ RULES_FILE="$HOME/.config/kwinrulesrc"
 # register a lowercase resourceClass ("dolphin"), but Alacritty's Wayland
 # app_id is "Alacritty" (capital A, its winit default) -- so it must be
 # spelled with the matching case here or this entry silently never matches.
-TRANSLUCENCY_EXCLUDE_CLASSES="${TRANSLUCENCY_EXCLUDE_CLASSES:-chrome,vlc,gwenview,jetbrains,dolphin,Alacritty,spectacle}"
+TRANSLUCENCY_EXCLUDE_CLASSES="${TRANSLUCENCY_EXCLUDE_CLASSES:-chrome,vlc,mpv,gwenview,jetbrains,dolphin,Alacritty,spectacle,YandexMusic}"
 TRANSLUCENCY_OPACITY="${TRANSLUCENCY_OPACITY:-75}"
 
 # NET::WindowTypeMask bitmask (netwm_def.h): NormalMask=1 | DialogMask=32 |
@@ -44,11 +44,11 @@ TRANSLUCENCY_TYPES_MASK="${TRANSLUCENCY_TYPES_MASK:-289}"
 # native Kvantum alpha (see comment above) -- their exclusion must stay
 # scoped to windows WITHOUT a transient parent, otherwise it also shadows the
 # catch-all rule for their child dialogs (Preferences, Properties, Rename,
-# "Open With", ...), which have no native alpha of their own and need the
-# forced KWin rule same as anything else. Every other excluded class
-# (chrome/vlc/gwenview/jetbrains/spectacle) is excluded for readability, not
-# surface capability, so ALL its windows (main + dialogs) should stay opaque
-# -- those get no such carve-out.
+# "Open With", ...), which by default have no native alpha of their own and
+# need the forced KWin rule same as anything else. Every other excluded
+# class (chrome/vlc/gwenview/jetbrains/spectacle) is excluded for
+# readability, not surface capability, so ALL its windows (main + dialogs)
+# should stay opaque -- those get no such carve-out.
 #
 # Why scope by "has a transient parent" rather than by window title or by
 # NET::WindowType (Normal/Dialog/Utility): confirmed via a KWin scripting
@@ -68,7 +68,19 @@ TRANSLUCENCY_TYPES_MASK="${TRANSLUCENCY_TYPES_MASK:-289}"
 # through to the catch-all rule automatically. No per-dialog title
 # allowlist needed, and it generalizes to any future NATIVE_ALPHA_CLASSES
 # entry for free.
-NATIVE_ALPHA_CLASSES="${NATIVE_ALPHA_CLASSES:-dolphin,Alacritty}"
+NATIVE_ALPHA_CLASSES="${NATIVE_ALPHA_CLASSES:-Alacritty}"
+
+# Classes excluded ENTIRELY (main window AND every dialog), because
+# tools/install-kvantum-dialog-alpha-fix.sh gives their dialogs real native
+# Kvantum alpha too (an LD_PRELOAD shim that fixes the early-winId() surface
+# creation Kvantum itself can't work around, see that script's header
+# comment). Without that fix installed, a class listed here would have fully
+# opaque, unstyled dialogs instead -- only move a class from
+# NATIVE_ALPHA_CLASSES to here once its dialogs actually have working native
+# alpha, confirmed by the same pixel-comparison method used for Dolphin's
+# main window (background pixel tracks the desktop behind the window, icon/
+# text pixels stay constant regardless of backdrop).
+NATIVE_ALPHA_FULL_CLASSES="${NATIVE_ALPHA_FULL_CLASSES:-dolphin}"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -86,10 +98,19 @@ fi
 
 IFS=',' read -ra EXCLUDES <<< "$TRANSLUCENCY_EXCLUDE_CLASSES"
 IFS=',' read -ra NATIVE_ALPHA <<< "$NATIVE_ALPHA_CLASSES"
+IFS=',' read -ra NATIVE_ALPHA_FULL <<< "$NATIVE_ALPHA_FULL_CLASSES"
 
 is_native_alpha_class() {
   local needle="$1" hay
   for hay in "${NATIVE_ALPHA[@]}"; do
+    [[ "$(echo -n "$hay" | xargs)" == "$needle" ]] && return 0
+  done
+  return 1
+}
+
+is_native_alpha_full_class() {
+  local needle="$1" hay
+  for hay in "${NATIVE_ALPHA_FULL[@]}"; do
     [[ "$(echo -n "$hay" | xargs)" == "$needle" ]] && return 0
   done
   return 1
@@ -103,7 +124,9 @@ is_native_alpha_class() {
     cls="$(echo -n "$cls" | xargs)" # trim whitespace
     [[ -z "$cls" ]] && continue
     transient_clause=""
-    if is_native_alpha_class "$cls"; then
+    if is_native_alpha_full_class "$cls"; then
+      : # no clause -- exclude this class entirely, main window + dialogs
+    elif is_native_alpha_class "$cls"; then
       # ExactBoolMatch=1 (Rules::BoolMatch, rules.h): only exclude windows
       # WITHOUT a transient parent, i.e. the real main window -- see comment
       # on NATIVE_ALPHA_CLASSES above.

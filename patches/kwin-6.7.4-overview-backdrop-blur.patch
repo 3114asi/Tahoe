@@ -1,0 +1,79 @@
+diff --git a/src/plugins/private/qml/WindowHeapDelegate.qml b/src/plugins/private/qml/WindowHeapDelegate.qml
+--- a/src/plugins/private/qml/WindowHeapDelegate.qml
++++ b/src/plugins/private/qml/WindowHeapDelegate.qml
+@@ -27,5 +27,9 @@ ExpoCell {
+     property bool gestureInProgress: effect.gestureInProgress
+     // Where the internal contentItem will be parented to
+     property Item contentItemParent: this
++    // Optional desktop image used by Overview to reconstruct backdrop blur.
++    // WindowThumbnail is rendered offscreen with a transparent background, so
++    // KWin's regular blur effect cannot see the desktop behind it.
++    property Item backdropSource: null
+ 
+     // no desktops is a special value which means "All Desktops"
+@@ -116,5 +120,42 @@ ExpoCell {
+         z: (activeDragHandler.active || returnAnimation.running) ? 1000
+             : thumb.window.stackingOrder * (presentOnCurrentDesktop ? 1 : 0.001)
+ 
++        ShaderEffectSource {
++            id: blurredBackdropCrop
++            anchors.fill: thumbSource
++            visible: false
++            live: true
++            sourceItem: thumb.backdropSource
++            sourceRect: {
++                if (!thumb.backdropSource) {
++                    return Qt.rect(0, 0, 0, 0);
++                }
++                const topLeft = thumbSource.mapToItem(thumb.backdropSource, 0, 0);
++                const bottomRight = thumbSource.mapToItem(thumb.backdropSource,
++                                                           thumbSource.width,
++                                                           thumbSource.height);
++                return Qt.rect(topLeft.x, topLeft.y,
++                               bottomRight.x - topLeft.x,
++                               bottomRight.y - topLeft.y);
++            }
++        }
++
++        OpacityMask {
++            id: blurredBackdrop
++            x: thumbSource.x
++            y: thumbSource.y
++            width: thumbSource.width
++            height: thumbSource.height
++            scale: thumbSource.scale
++            transformOrigin: thumbSource.transformOrigin
++            visible: thumb.backdropSource !== null
++            source: blurredBackdropCrop
++            maskSource: Rectangle {
++                width: blurredBackdrop.width
++                height: blurredBackdrop.height
++                radius: Kirigami.Units.cornerRadius * 3
++            }
++        }
++
+         KWinComponents.WindowThumbnail {
+             id: thumbSource
+diff --git a/src/plugins/overview/qml/Main.qml b/src/plugins/overview/qml/Main.qml
+--- a/src/plugins/overview/qml/Main.qml
++++ b/src/plugins/overview/qml/Main.qml
+@@ -591,5 +591,13 @@ FocusScope {
+                         border.color: gridVal == 1 ? borderColor : "transparent"
+                     }
+ 
++                    FastBlur {
++                        id: blurredDesktopElement
++                        anchors.fill: parent
++                        source: desktopElement
++                        radius: 64
++                        visible: false
++                    }
++
+                     DropArea {
+                         anchors.fill: parent
+@@ -694,4 +702,5 @@ FocusScope {
+                     }
+                     delegate: WindowHeapDelegate {
+                         windowHeap: heap
++                        backdropSource: blurredDesktopElement
+                         offsetX: mainBackground.deltaColumn * container.width * (gridVal > 0 ? 0 : 1) + (dragHandler.active ? (dragHandler.centroid.pressPosition.x - dragHandler.centroid.position.x) : 0)

@@ -504,17 +504,22 @@ bool BlurEffect::shouldForceBlur(const EffectWindow *w) const
         return false;
     }
     const QString windowClass = w->windowClass();
+    bool matched = false;
     for (const QString &cls : m_windowClasses) {
         const QString needle = cls.trimmed();
+        if (needle.startsWith(QLatin1Char('!'))
+            && windowClass.contains(needle.sliced(1), Qt::CaseInsensitive)) {
+            // Explicit exclusions take precedence over wildcard/positive matches.
+            return false;
+        }
         if (needle == QLatin1String("*")) {
-            // Wildcard: force blur for every window (still excluding desktop/dock above).
-            return true;
+            matched = true;
         }
         if (!needle.isEmpty() && windowClass.contains(needle, Qt::CaseInsensitive)) {
-            return true;
+            matched = true;
         }
     }
-    return false;
+    return matched;
 }
 
 RegionF BlurEffect::decorationBlurRegion(const EffectWindow *w) const

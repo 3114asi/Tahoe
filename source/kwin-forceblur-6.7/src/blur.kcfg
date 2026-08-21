@@ -15,7 +15,7 @@
             <default>150</default>
         </entry>
         <entry name="WindowClasses" type="StringList">
-            <default>alacritty</default>
+            <default>*,!mpv</default>
         </entry>
     </group>
 </kcfg>
