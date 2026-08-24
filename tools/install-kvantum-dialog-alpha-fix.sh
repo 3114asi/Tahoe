@@ -87,14 +87,22 @@ if [[ -f "$DESKTOP_DST" ]]; then
   cp -a "$DESKTOP_DST" "$DESKTOP_DST.bak-$(date +%Y%m%d-%H%M%S)"
 fi
 
-sed -E "s#^Exec=dolphin #Exec=env LD_PRELOAD=$LIB dolphin #" \
+sed -E "s#^Exec=dolphin #Exec=env LANG=ru_RU.UTF-8 LANGUAGE=ru LC_ALL=ru_RU.UTF-8 LD_PRELOAD=$LIB dolphin #" \
   "$DESKTOP_SRC" > "$DESKTOP_DST"
 
-if ! grep -q "^Exec=env LD_PRELOAD=$LIB dolphin " "$DESKTOP_DST"; then
+if ! grep -q "^Exec=env LANG=ru_RU.UTF-8 LANGUAGE=ru LC_ALL=ru_RU.UTF-8 LD_PRELOAD=$LIB dolphin " "$DESKTOP_DST"; then
   echo "Failed to patch Exec= line in $DESKTOP_DST -- check $DESKTOP_SRC's Exec= syntax by hand" >&2
   exit 1
 fi
 echo "Installed: $DESKTOP_DST"
+
+# Keep the expected Dolphin startup behaviour explicit. Forced termination is
+# sometimes needed to load a rebuilt preload shim, and must not permanently
+# turn a stale home-directory launch into the new startup default.
+if command -v kwriteconfig6 >/dev/null 2>&1; then
+  kwriteconfig6 --file dolphinrc --group General --key RememberOpenedTabs true
+  kwriteconfig6 --file dolphinrc --group General --key ModifiedStartupSettings true
+fi
 
 echo
 echo "Also required (not done by this script -- see other tools/notes):"

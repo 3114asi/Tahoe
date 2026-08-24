@@ -33,6 +33,9 @@ kwriteconfig6 --file kdeglobals   --group General --key ColorScheme MacTahoeLigh
 kwriteconfig6 --file kcminputrc   --group Mouse   --key cursorTheme MacTahoe-cursors
 gsettings set org.gnome.desktop.interface cursor-theme 'MacTahoe-cursors'
 plasma-apply-lookandfeel -a com.github.vinceliuice.MacTahoe-Light
+# Dolphin должен восстанавливать последнюю папку и открытые вкладки.
+kwriteconfig6 --file dolphinrc --group General --key RememberOpenedTabs true
+kwriteconfig6 --file dolphinrc --group General --key ModifiedStartupSettings true
 
 # 3b. GTK/GNOME-приложения читают тему из отдельных файлов (gtk-3.0/4.0
 #     settings.ini, xsettingsd.conf, легаси ~/.gtkrc-2.0), которые install.sh
@@ -60,6 +63,10 @@ sudo ./source/MacTahoe-kde/sddm/install.sh
 # 7. Перезапустить Plasma Shell, чтобы гарантированно подхватить
 #    Aurorae/panel-background SVG (кэш ksvg) и live-конфиги:
 kquitapp6 plasmashell && kstart6 plasmashell
+
+# 8. Автоматически восстанавливать Overview blur, forceblur, Window Rules и
+#    Dolphin alpha-hook после обновлений KWin/Plasma:
+tools/install-theme-auto-repair.sh
 ```
 
 ## Проверка состояния

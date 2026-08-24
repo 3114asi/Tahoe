@@ -12,7 +12,11 @@ QML_FILE="/usr/lib/x86_64-linux-gnu/qt6/qml/org/kde/kwin/private/effects/WindowH
 QML_BACKUP_FILE="$BACKUP_DIR/WindowHeapDelegate-${KWIN_UPSTREAM_VERSION}-stock.qml"
 QML_PLUGIN_FILE="/usr/lib/x86_64-linux-gnu/qt6/qml/org/kde/kwin/private/effects/libeffectsplugin.so"
 QML_PLUGIN_BACKUP_FILE="$BACKUP_DIR/libeffectsplugin-${KWIN_UPSTREAM_VERSION}-stock.so"
-WORK_DIR="$(mktemp -d)"
+BUILD_TMP_BASE="${TAHOE_BUILD_TMPDIR:-$ROOT_DIR/tmp}"
+BUILD_JOBS="${TAHOE_BUILD_JOBS:-4}"
+mkdir -p "$BUILD_TMP_BASE"
+export TMPDIR="$BUILD_TMP_BASE"
+WORK_DIR="$(mktemp -d -p "$BUILD_TMP_BASE" kwin-overview.XXXXXX)"
 
 cleanup() {
     rm -rf -- "$WORK_DIR"
@@ -48,7 +52,7 @@ CC=gcc-14 CXX=g++-14 cmake -S "$SOURCE_DIR" -B "$WORK_DIR/build" \
     -DKWIN_BUILD_KCMS=OFF \
     -DKWIN_BUILD_RUNNERS=OFF \
     -DKWIN_BUILD_NOTIFICATIONS=OFF
-cmake --build "$WORK_DIR/build" --target kwin_wayland effectsplugin -j"$(nproc)"
+cmake --build "$WORK_DIR/build" --target kwin_wayland effectsplugin -j"$BUILD_JOBS"
 
 QML_PLUGIN_BUILD="$(find "$WORK_DIR/build" -type f -name libeffectsplugin.so -print -quit)"
 if [[ -z "$QML_PLUGIN_BUILD" ]]; then

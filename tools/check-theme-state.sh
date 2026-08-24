@@ -39,6 +39,7 @@ for f in \
   "$HOME/.local/share/icons/MacTahoe/index.theme" \
   "$HOME/.local/share/aurorae/themes/MacTahoe-Light" \
   "$HOME/.local/share/aurorae/themes/MacTahoe-Dark" \
-  "$HOME/.themes/MacTahoe"; do
+  "$HOME/.themes/MacTahoe-Light" \
+  "$HOME/.themes/MacTahoe-Dark"; do
   [[ -e "$f" ]] && echo "ok: $f" || echo "missing: $f"
 done

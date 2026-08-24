@@ -1,0 +1,9 @@
+[Unit]
+Description=Restore Tahoe theme patches after KWin updates
+After=plasma-kwin_wayland.service
+
+[Service]
+Type=oneshot
+ExecStart=@ROOT@/tools/repair-theme-after-update.sh
+Nice=10
+IOSchedulingClass=idle

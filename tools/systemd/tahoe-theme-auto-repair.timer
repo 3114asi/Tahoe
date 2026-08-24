@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodically verify Tahoe theme patches
+
+[Timer]
+OnActiveSec=5min
+OnUnitActiveSec=6h
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target
