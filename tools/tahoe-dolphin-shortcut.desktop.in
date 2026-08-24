@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Dolphin — restore last folder
+Comment=Open Dolphin at the location saved by the last closed window
+Exec=@LAUNCHER@
+Icon=org.kde.dolphin
+Type=Application
+NoDisplay=true
+X-KDE-Shortcuts=Meta+E

@@ -48,10 +48,15 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC="$ROOT/source/kvantum-dialog-alpha-fix/winid-alpha-hook.cpp"
 LIB_DIR="$HOME/.local/lib"
 LIB="$LIB_DIR/kvantum-dialog-alpha-fix.so"
+BIN_DIR="$HOME/.local/bin"
+LAUNCHER_SRC="$ROOT/tools/dolphin-launcher.sh"
+LAUNCHER="$BIN_DIR/tahoe-dolphin"
+SHORTCUT_SRC="$ROOT/tools/tahoe-dolphin-shortcut.desktop.in"
 
 DESKTOP_SRC="/usr/share/applications/org.kde.dolphin.desktop"
 DESKTOP_DIR="$HOME/.local/share/applications"
 DESKTOP_DST="$DESKTOP_DIR/org.kde.dolphin.desktop"
+SHORTCUT_DST="$DESKTOP_DIR/tahoe-dolphin-shortcut.desktop"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -76,7 +81,15 @@ g++ -O2 -fPIC -shared \
   $(pkg-config --libs Qt6Widgets Qt6Gui Qt6Core) -ldl
 echo "Built: $LIB"
 
-# --- 2. Wire it into Dolphin's launch via a user-level .desktop override --
+# --- 2. Install the launcher ------------------------------------------
+# Dolphin 26.08 deliberately skips tab restoration when another GUI process
+# exists. The wrapper supplies the last saved URL to a subsequent empty launch
+# so that a requested additional window does not fall back to Home.
+mkdir -p "$BIN_DIR"
+install -m 0755 "$LAUNCHER_SRC" "$LAUNCHER"
+echo "Installed: $LAUNCHER"
+
+# --- 3. Wire it into Dolphin's launch via a user-level .desktop override --
 if [[ ! -f "$DESKTOP_SRC" ]]; then
   echo "Missing $DESKTOP_SRC -- is Dolphin installed?" >&2
   exit 1
@@ -87,14 +100,32 @@ if [[ -f "$DESKTOP_DST" ]]; then
   cp -a "$DESKTOP_DST" "$DESKTOP_DST.bak-$(date +%Y%m%d-%H%M%S)"
 fi
 
-sed -E "s#^Exec=dolphin #Exec=env LANG=ru_RU.UTF-8 LANGUAGE=ru LC_ALL=ru_RU.UTF-8 LD_PRELOAD=$LIB dolphin #" \
+sed -E "s#^Exec=dolphin #Exec=$LAUNCHER #" \
   "$DESKTOP_SRC" > "$DESKTOP_DST"
+# Meta+E registered against org.kde.dolphin.desktop keeps the system Exec in
+# KGlobalAccel even after a user override changes it. Give the shortcut a
+# separate desktop ID whose only command is our launcher.
+sed -i '/^X-KDE-Shortcuts=Meta+E$/d' "$DESKTOP_DST"
+sed "s#@LAUNCHER@#$LAUNCHER#" "$SHORTCUT_SRC" > "$SHORTCUT_DST"
 
-if ! grep -q "^Exec=env LANG=ru_RU.UTF-8 LANGUAGE=ru LC_ALL=ru_RU.UTF-8 LD_PRELOAD=$LIB dolphin " "$DESKTOP_DST"; then
+if ! grep -q "^Exec=$LAUNCHER " "$DESKTOP_DST"; then
   echo "Failed to patch Exec= line in $DESKTOP_DST -- check $DESKTOP_SRC's Exec= syntax by hand" >&2
   exit 1
 fi
 echo "Installed: $DESKTOP_DST"
+echo "Installed: $SHORTCUT_DST"
+
+if command -v kbuildsycoca6 >/dev/null 2>&1; then
+  kbuildsycoca6 --noincremental >/dev/null
+fi
+if command -v qdbus6 >/dev/null 2>&1; then
+  # Make KWin discover the new shortcut component, then remove the stale
+  # org.kde.dolphin.desktop action which launches /usr/bin/dolphin directly.
+  qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure >/dev/null 2>&1 || true
+  qdbus6 org.kde.kglobalaccel /kglobalaccel \
+    org.kde.KGlobalAccel.unregister org.kde.dolphin.desktop _launch \
+    >/dev/null 2>&1 || true
+fi
 
 # Keep the expected Dolphin startup behaviour explicit. Forced termination is
 # sometimes needed to load a rebuilt preload shim, and must not permanently
@@ -110,7 +141,5 @@ echo "  - MacTahoe.svg dialog-normal/-inactive opacity=0.75 (Kvantum SVG)"
 echo "  - dolphin listed in NATIVE_ALPHA_FULL_CLASSES when running"
 echo "    install-kwin-window-rules.sh"
 echo
-echo "Existing Dolphin windows do NOT pick this up (they're already running"
-echo "without the preload, and Dolphin is a D-Bus single-instance app, so a"
-echo "plain relaunch just messages the old process). Apply now with:"
-echo "  pkill -9 -x dolphin && setsid -f dolphin &"
+echo "Existing Dolphin processes do NOT pick up a rebuilt preload library."
+echo "Close existing Dolphin windows normally to reload a rebuilt library."

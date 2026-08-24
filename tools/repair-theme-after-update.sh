@@ -16,8 +16,11 @@ kwin_version="$(dpkg-query -W -f='${Version}' kwin-wayland 2>/dev/null || true)"
 saved_version="$(cat "$VERSION_FILE" 2>/dev/null || true)"
 
 if [[ ! -f "$HOME/.local/lib/kvantum-dialog-alpha-fix.so" ]] ||
-   ! grep -q 'LD_PRELOAD=.*/kvantum-dialog-alpha-fix.so' \
-      "$HOME/.local/share/applications/org.kde.dolphin.desktop" 2>/dev/null; then
+   [[ ! -x "$HOME/.local/bin/tahoe-dolphin" ]] ||
+   ! grep -q "^Exec=$HOME/.local/bin/tahoe-dolphin " \
+      "$HOME/.local/share/applications/org.kde.dolphin.desktop" 2>/dev/null ||
+   ! grep -q '^X-KDE-Shortcuts=Meta+E$' \
+      "$HOME/.local/share/applications/tahoe-dolphin-shortcut.desktop" 2>/dev/null; then
     echo "$LOG_PREFIX restoring Dolphin dialog alpha hook"
     "$ROOT/tools/install-kvantum-dialog-alpha-fix.sh"
 fi
